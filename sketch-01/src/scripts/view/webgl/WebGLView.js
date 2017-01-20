@@ -52,7 +52,7 @@ export default class WebGLView {
 
 	initRibbon() {
 		let t = 30;
-		const steps = 10;
+		const steps = 500;
 		const dt = 0.08;
 
 		const geometry = new THREE.PlaneBufferGeometry(steps, t, steps, 1);
@@ -69,12 +69,13 @@ export default class WebGLView {
   		t += dt;
 
 		const positions = geometry.attributes.position.array;
+		const halfLength = positions.length / 2;
 
-		for (let i3 = 0; i3 < positions.length; i3 +=3) {
+		for (let i3 = 0, i6 = 0; i3 < halfLength; i3 += 3, i6 += 6) {
 			const P = this.getCurvePoint(t);
 			const T = new THREE.Vector3().subVectors(P, P1);
 			const N = new THREE.Vector3().subVectors(T, T1);
-			const B = T.cross(N).normalize();
+			const B = T.clone().cross(N).normalize();
 
 			const W = B.clone().multiplyScalar(dt);
 			const Pa = new THREE.Vector3().subVectors(P, W);
@@ -84,14 +85,18 @@ export default class WebGLView {
 			T1 = T;
 			t += dt;
 
-			console.log(Pa, Pb);
+			// console.log(Pa, Pb);
 
-			// positions[i3 + 0]
-			// positions[i3 + 1]
-			// positions[i3 + 2]
+			positions[i3 + 0] = Pa.x;
+			positions[i3 + 1] = Pa.y;
+			positions[i3 + 2] = Pa.z;
+
+			positions[i3 + 0 + halfLength] = Pb.x;
+			positions[i3 + 1 + halfLength] = Pb.y;
+			positions[i3 + 2 + halfLength] = Pb.z;
 		}
 
-		geometry.attributes.position.needsUpdate = true;
+		// geometry.attributes.position.needsUpdate = true;
 	}
 
 	getCurvePoint(t) {
