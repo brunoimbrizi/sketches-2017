@@ -53,10 +53,10 @@ export default class WebGLView {
 	initRibbons() {
 		this.ribbons = [];
 		this.frameCount = 1;
-		this.totalFrames = 30 * 4;
-		this.steps = 30;
+		this.totalFrames = 30 * 3;
+		this.steps = 14;
 
-		for (let i = 0; i < 1; i++) {
+		for (let i = 0; i < 20; i++) {
 			const geometry = new THREE.PlaneBufferGeometry(this.steps, 1, this.steps, 1);
 			const material = new THREE.MeshBasicMaterial({ color: 0xFF0000, wireframe: true });
 
@@ -64,29 +64,28 @@ export default class WebGLView {
 			this.scene.add(mesh);
 			this.ribbons.push(mesh);
 
-			mesh.params1 = new THREE.Vector3(random(-1, 1), random(-1, 1), random(-1, 1)).multiplyScalar(6);
-			mesh.params2 = new THREE.Vector3(random(-1, 1), random(-1, 1), random(-1, 1)).multiplyScalar(20);
+			mesh.freq1 = random(-8, 8);
+			mesh.freq2 = random(-8, 8);
 		}
   	}
 
   	updateRibbons() {
-  		const progress = this.frameCount / this.totalFrames % 1;
+  		const progress = (this.frameCount - 1) / this.totalFrames % 1;
 
-  		// console.log(progress);
-
-		const dt = min(0.018, progress * 0.1);
-		const t0 = this.frameCount * 0.01 + 20;
-		const phase = this.frameCount * 0.0179 + 20;
-		const extent = min(0.05, 0.5 - progress / 2);
+		const dt = 0.01211;
+		const t0 = this.frameCount * 0.02171 + 20;
 
 		for (let i = 0; i < this.ribbons.length; i++) {
 			const ribbon = this.ribbons[i];
 
-			// const params1 = new THREE.Vector3(random(-1, 1), random(-1, 1), random(-1, 1));
-			// const params2 = new THREE.Vector3(random(-1, 1), random(-1, 1), random(-1, 1));
+			let pr = progress * 1.5 - 0.5 * i / this.ribbons.length;
+			if (pr < 0) pr = 0;
+			if (pr > 1) pr = 1;
 
-			const Pp = this.getCurvePoint(ribbon.params1, ribbon.params2, t0 - dt, phase);
-			let P1 = this.getCurvePoint(ribbon.params1, ribbon.params2, t0, phase);
+			const tw = 0.075 * sin(PI * pr);
+
+			const Pp = this.getCurvePoint(ribbon.freq1, ribbon.freq2, t0 - dt);
+			let P1 = this.getCurvePoint(ribbon.freq1, ribbon.freq2, t0);
 			let T1 = new THREE.Vector3().subVectors(P1, Pp);
 			let t = t0 - dt;
 
@@ -94,12 +93,13 @@ export default class WebGLView {
 			const halfLength = positions.length / 2;
 
 			for (let i3 = 0, i6 = 0; i3 < halfLength; i3 += 3, i6 += 6) {
-				const P = this.getCurvePoint(ribbon.params1, ribbon.params2, t, phase);
+				const P = this.getCurvePoint(ribbon.freq1, ribbon.freq2, t);
 				const T = new THREE.Vector3().subVectors(P, P1);
 				const N = new THREE.Vector3().subVectors(T, T1);
 				const B = T.clone().cross(N).normalize();
 
-				const W = B.clone().multiplyScalar(extent);
+				const w = sin(PI * i3 / halfLength) * tw;
+				const W = B.clone().multiplyScalar(w);
 				const Pa = new THREE.Vector3().subVectors(P, W);
 				const Pb = new THREE.Vector3().addVectors(P, W);
 
@@ -119,15 +119,16 @@ export default class WebGLView {
 			ribbon.geometry.attributes.position.needsUpdate = true;
 		}
 
+		// this.frameCount += 0.1;
 		this.frameCount++;
 	}
 
-	getCurvePoint(params1, params2, t, phase) {
-		return new THREE.Vector3(
-			sin(params1.x * t + (1 + sin(params2.x * t + phase) * 0.5)),
-			sin(params1.y * t + (1 + sin(params2.y * t + phase) * 0.5)),
-			sin(params1.z * t + (1 + sin(params2.z * t + phase) * 0.5))
-		);
+	getCurvePoint(freq1, freq2, t) {
+		const sn1 = sin(t * freq1);
+		const cs1 = cos(t * freq1);
+		const sn2 = sin(t * freq2);
+		const cs2 = cos(t * freq2);
+		return new THREE.Vector3(sn1 * sn2, cs2, cs1 * sn2);
 	}
 
 	// ---------------------------------------------------------------------------------------------
