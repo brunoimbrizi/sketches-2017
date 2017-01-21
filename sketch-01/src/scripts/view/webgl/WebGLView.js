@@ -85,8 +85,6 @@ export default class WebGLView {
 			T1 = T;
 			t += dt;
 
-			// console.log(Pa, Pb);
-
 			positions[i3 + 0] = Pa.x;
 			positions[i3 + 1] = Pa.y;
 			positions[i3 + 2] = Pa.z;
